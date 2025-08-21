@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Painel do Morador{% endblock %}
+
+{% block content %}
+<div class="d-flex" id="wrapper">
+    <div class="border-end bg-white" id="sidebar-wrapper">
+        <div class="sidebar-heading border-bottom bg-light">Menu Morador</div>
+        <div class="list-group list-group-flush">
+            <a class="list-group-item list-group-item-action list-group-item-light p-3" href="#!">Dashboard</a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3" data-bs-toggle="modal" data-bs-target="#qrCodeModal">Acesso</a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3" href="#!">Reservas</a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3" href="#!">Financeiro</a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3" href="#!">Avisos</a>
+        </div>
+    </div>
+    <div id="page-content-wrapper">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+            <div class="container-fluid">
+                <button class="btn btn-primary" id="sidebarToggle">Menu</button>
+                <a href="{{ url_for('logout') }}" class="btn btn-danger">Sair</a>
+            </div>
+        </nav>
+        <div class="container-fluid">
+            <h1 class="mt-4">Bem-vindo, {{ session.get('nome') }}!</h1>
+            <p>Este é o seu painel do morador. Use o menu lateral para navegar entre as opções.</p>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="qrCodeModal" tabindex="-1" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="qrCodeModalLabel">QR Code de Acesso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p>Mostre este QR Code na portaria para ter acesso.</p>
+                <img src="{{ url_for('gerar_qrcode') }}" alt="QR Code de Acesso" class="img-fluid">
+                <div class="mt-3">
+                    <p><strong>Nome:</strong> {{ session.get('nome') }}</p>
+                    <p><strong>CPF:</strong> {{ session.get('cpf') }}</p>
+                    <p><strong>Telefone:</strong> {{ session.get('telefone') }}</p>
+                    <p><strong>Email:</strong> {{ session.get('email') }}</p>
+                    <p><strong>Endereço:</strong> {{ session.get('endereco') }}</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var sidebarToggle = document.getElementById('sidebarToggle');
+    var wrapper = document.getElementById('wrapper');
+    sidebarToggle.addEventListener('click', function() {
+        wrapper.classList.toggle('toggled');
+    });
+</script>
+
+<style>
+    #wrapper {
+        display: flex;
+    }
+    #sidebar-wrapper {
+        min-height: 100vh;
+        margin-left: -15rem;
+        transition: margin .25s ease-out;
+    }
+    #sidebar-wrapper .sidebar-heading {
+        padding: 0.875rem 1.25rem;
+        font-size: 1.2rem;
+    }
+    #sidebar-wrapper .list-group {
+        width: 15rem;
+    }
+    #page-content-wrapper {
+        flex: 1;
+    }
+    #wrapper.toggled #sidebar-wrapper {
+        margin-left: 0;
+    }
+    @media (min-width: 768px) {
+        #sidebar-wrapper {
+            margin-left: 0;
+        }
+        #page-content-wrapper {
+            min-width: 0;
+            width: 100%;
+        }
+        #wrapper.toggled #sidebar-wrapper {
+            margin-left: -15rem;
+        }
+    }
+</style>
+
+{% endblock %}
