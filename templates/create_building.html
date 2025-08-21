@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Criar Prédio{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Criar Novo Prédio</h1>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Voltar</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('criar_predio') }}">
+            <div class="mb-3">
+                <label for="nome_predio" class="form-label">Nome do Prédio</label>
+                <input type="text" class="form-control" id="nome_predio" name="nome_predio" required>
+            </div>
+            <div class="mb-3">
+                <label for="num_andares" class="form-label">Número de Andares</label>
+                <input type="number" class="form-control" id="num_andares" name="num_andares" min="1" required>
+            </div>
+            <div class="mb-3">
+                <label for="aptos_por_andar" class="form-label">Apartamentos por Andar</label>
+                <input type="number" class="form-control" id="aptos_por_andar" name="aptos_por_andar" min="1" required>
+            </div>
+            <button type="submit" class="btn btn-success">Criar Prédio</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

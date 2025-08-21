@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Apartamentos do Prédio {{ predio.nome }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Apartamentos do Prédio: {{ predio.nome }}</h1>
+    <a href="{{ url_for('admin_dashboard', view='buildings') }}" class="btn btn-secondary">Voltar para Prédios</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Número do Apartamento</th>
+                <th>Andar</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for apto in apartamentos %}
+            <tr>
+                <td>{{ apto.numero }}</td>
+                <td>{{ apto.andar }}</td>
+                <td>
+                    {% if apto.status == 'vago' %}
+                        <span class="badge bg-success">{{ apto.status.capitalize() }}</span>
+                    {% else %}
+                        <span class="badge bg-danger">{{ apto.status.capitalize() }}</span>
+                        <br><small>Morador: {{ apto.morador_nome }}</small>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if apto.status == 'vago' %}
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#assignModal-{{ apto.numero }}">Atribuir Morador</button>
+                    {% else %}
+                    <button class="btn btn-secondary btn-sm" disabled>Já Ocupado</button>
+                    {% endif %}
+                </td>
+            </tr>
+
+            <div class="modal fade" id="assignModal-{{ apto.numero }}" tabindex="-1" aria-labelledby="assignModalLabel-{{ apto.numero }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="assignModalLabel-{{ apto.numero }}">Atribuir Morador ao Apartamento {{ apto.numero }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form action="{{ url_for('atribuir_apartamento') }}" method="POST">
+                            <div class="modal-body">
+                                <input type="hidden" name="apartamento_numero" value="{{ apto.numero }}">
+                                <input type="hidden" name="predio_id" value="{{ predio.id }}">
+                                <div class="mb-3">
+                                    <label for="morador-{{ apto.numero }}" class="form-label">Selecione o Morador</label>
+                                    <select class="form-select" id="morador-{{ apto.numero }}" name="morador_id" required>
+                                        <option value="" disabled selected>Selecione um morador...</option>
+                                        {% for morador in moradores_disponiveis %}
+                                            <option value="{{ morador.id }}">{{ morador.nome }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                <button type="submit" class="btn btn-primary">Atribuir</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
