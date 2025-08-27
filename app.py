@@ -5,6 +5,12 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 app = Flask(__name__)
 app.secret_key = 'uma_chave_secreta_muito_segura'
 
+financeiro = []
+next_financeiro_id = 1
+
+# Definir valor padrão do condomínio (pode ser configurável)
+VALOR_CONDOMINIO = 350.00
+
 # --- Simulação de Banco de Dados Atualizada ---
 users = [
     {'id': 1, 'nome': 'admin', 'senha': 'condominio', 'tipo_usuario': 'administrador', 'password_changed': False, 'cpf': '000.000.000-00', 'telefone': '(00) 00000-0000', 'email': 'admin@condominio.com', 'endereco': 'Rua Principal, 100', 'apartamento_numero': None},
@@ -94,12 +100,19 @@ def admin_dashboard():
         flash('Acesso não autorizado.', 'danger')
         return redirect(url_for('login'))
     
-    view = request.args.get('view', 'users')
+    view = request.args.get('view', 'dashboard')
+    
+    # Se for a view de financeiro, carrega os dados financeiros
+    financeiro_data = []
+    if view == 'financeiro':
+        financeiro_data = financeiro
     
     return render_template('admin_dashboard.html', 
                            users=users, 
                            buildings=buildings,
-                           current_view=view)
+                           financeiro_data=financeiro_data,
+                           current_view=view,
+                           VALOR_CONDOMINIO=VALOR_CONDOMINIO)
 
 @app.route('/admin_dashboard/add_user', methods=['POST'])
 def add_user():
@@ -248,6 +261,140 @@ def morador_dashboard():
         flash('Acesso não autorizado.', 'danger')
         return redirect(url_for('login'))
     return render_template('morador_dashboard.html')
+
+@app.route('/financeiro')
+def financeiro_view():
+    if not session.get('logged_in'):
+        flash('Acesso não autorizado.', 'danger')
+        return redirect(url_for('login'))
+    
+    user_id = session.get('id')
+    user_tipo = session.get('tipo_usuario')
+    
+    # Para administrador, mostra todos os registros
+    if user_tipo == 'administrador':
+        registros = financeiro
+    # Para morador, mostra apenas seus registros
+    elif user_tipo == 'morador':
+        registros = [f for f in financeiro if f['morador_id'] == user_id]
+    else:
+        flash('Acesso não autorizado.', 'danger')
+        return redirect(url_for('index'))
+    
+    # Obter mês atual
+    from datetime import datetime
+    mes_atual = datetime.now().strftime('%Y-%m')
+    
+    # Encontrar registro do mês atual
+    condominio_atual = next((f for f in registros if f['mes_referencia'] == mes_atual), None)
+    
+    return render_template('financeiro.html', 
+                         registros=registros,
+                         condominio_atual=condominio_atual,
+                         mes_atual=mes_atual,
+                         user_tipo=user_tipo)
+
+@app.route('/gerar_condominio_mensal', methods=['POST'])
+def gerar_condominio_mensal():
+    if not session.get('logged_in') or session.get('tipo_usuario') != 'administrador':
+        flash('Acesso não autorizado.', 'danger')
+        return redirect(url_for('login'))
+    
+    global next_financeiro_id
+    
+    mes_referencia = request.form['mes_referencia']
+    
+    # Verificar se já existe condomínio para este mês
+    if any(f['mes_referencia'] == mes_referencia for f in financeiro):
+        flash('Condomínio para este mês já foi gerado.', 'warning')
+        return redirect(url_for('financeiro_view'))
+    
+    # Gerar condomínio para todos os moradores
+    moradores = [u for u in users if u['tipo_usuario'] == 'morador' and u['apartamento_numero'] is not None]
+    
+    for morador in moradores:
+        novo_condominio = {
+            'id': next_financeiro_id,
+            'morador_id': morador['id'],
+            'morador_nome': morador['nome'],
+            'apartamento_numero': morador['apartamento_numero'],
+            'mes_referencia': mes_referencia,
+            'valor': VALOR_CONDOMINIO,
+            'status': 'pendente',
+            'data_vencimento': f"{mes_referencia}-10",  # Vencimento no dia 10
+            'data_pagamento': None,
+            'comprovante_path': None
+        }
+        financeiro.append(novo_condominio)
+        next_financeiro_id += 1
+    
+    flash(f'Condomínios para {mes_referencia} gerados com sucesso!', 'success')
+    return redirect(url_for('financeiro_view'))
+
+@app.route('/marcar_pago/<int:financeiro_id>')
+def marcar_pago(financeiro_id):
+    if not session.get('logged_in') or session.get('tipo_usuario') != 'administrador':
+        flash('Acesso não autorizado.', 'danger')
+        return redirect(url_for('admin_dashboard', view='financeiro'))
+    
+    registro = next((f for f in financeiro if f['id'] == financeiro_id), None)
+    
+    if registro:
+        from datetime import datetime
+        registro['status'] = 'pago'
+        registro['data_pagamento'] = datetime.now().strftime('%Y-%m-%d')
+        flash('Pagamento registrado com sucesso!', 'success')
+    else:
+        flash('Registro não encontrado.', 'danger')
+    
+    return redirect(url_for('financeiro_view'))
+
+@app.route('/gerar_extrato/<int:financeiro_id>')
+def gerar_extrato(financeiro_id):
+    if not session.get('logged_in'):
+        flash('Acesso não autorizado.', 'danger')
+        return redirect(url_for('login'))
+    
+    registro = next((f for f in financeiro if f['id'] == financeiro_id), None)
+    user_tipo = session.get('tipo_usuario')
+    
+    # Verificar permissões
+    if not registro or (user_tipo == 'morador' and registro['morador_id'] != session.get('id')):
+        flash('Acesso não autorizado.', 'danger')
+        return redirect(url_for('financeiro_view'))
+    
+    # Gerar PDF do extrato (simulação)
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter
+    from io import BytesIO
+    
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    
+    # Cabeçalho
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(100, 750, "Extrato de Condomínio")
+    p.setFont("Helvetica", 12)
+    p.drawString(100, 730, f"Morador: {registro['morador_nome']}")
+    p.drawString(100, 710, f"Apartamento: {registro['apartamento_numero']}")
+    p.drawString(100, 690, f"Mês de referência: {registro['mes_referencia']}")
+    p.drawString(100, 670, f"Valor: R$ {registro['valor']:.2f}")
+    p.drawString(100, 650, f"Status: {registro['status'].upper()}")
+    p.drawString(100, 630, f"Data de vencimento: {registro['data_vencimento']}")
+    
+    if registro['data_pagamento']:
+        p.drawString(100, 610, f"Data de pagamento: {registro['data_pagamento']}")
+    
+    p.drawString(100, 570, "Este documento serve como comprovante de extrato.")
+    
+    p.showPage()
+    p.save()
+    
+    buffer.seek(0)
+    
+    filename = f"extrato_{registro['morador_nome']}_{registro['mes_referencia']}.pdf"
+    
+    return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
 
 @app.route('/gerar_qrcode')
 def gerar_qrcode():

@@ -8,9 +8,11 @@
         <div class="sidebar-heading border-bottom bg-light">Menu Morador</div>
         <div class="list-group list-group-flush">
             <a class="list-group-item list-group-item-action list-group-item-light p-3" href="#!">Dashboard</a>
-            <a class="list-group-item list-group-item-action list-group-item-light p-3" data-bs-toggle="modal" data-bs-target="#qrCodeModal">Acesso</a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3" data-bs-toggle="modal"
+                data-bs-target="#qrCodeModal">Acesso</a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3"
+                href="{{ url_for('financeiro_view') }}">Financeiro</a>
             <a class="list-group-item list-group-item-action list-group-item-light p-3" href="#!">Reservas</a>
-            <a class="list-group-item list-group-item-action list-group-item-light p-3" href="#!">Financeiro</a>
             <a class="list-group-item list-group-item-action list-group-item-light p-3" href="#!">Avisos</a>
         </div>
     </div>
@@ -56,7 +58,7 @@
 <script>
     var sidebarToggle = document.getElementById('sidebarToggle');
     var wrapper = document.getElementById('wrapper');
-    sidebarToggle.addEventListener('click', function() {
+    sidebarToggle.addEventListener('click', function () {
         wrapper.classList.toggle('toggled');
     });
 </script>
@@ -65,32 +67,40 @@
     #wrapper {
         display: flex;
     }
+
     #sidebar-wrapper {
         min-height: 100vh;
         margin-left: -15rem;
         transition: margin .25s ease-out;
     }
+
     #sidebar-wrapper .sidebar-heading {
         padding: 0.875rem 1.25rem;
         font-size: 1.2rem;
     }
+
     #sidebar-wrapper .list-group {
         width: 15rem;
     }
+
     #page-content-wrapper {
         flex: 1;
     }
+
     #wrapper.toggled #sidebar-wrapper {
         margin-left: 0;
     }
+
     @media (min-width: 768px) {
         #sidebar-wrapper {
             margin-left: 0;
         }
+
         #page-content-wrapper {
             min-width: 0;
             width: 100%;
         }
+
         #wrapper.toggled #sidebar-wrapper {
             margin-left: -15rem;
         }

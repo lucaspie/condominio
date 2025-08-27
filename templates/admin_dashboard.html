@@ -9,6 +9,7 @@
         <div class="list-group list-group-flush">
             <a href="{{ url_for('admin_dashboard', view='users') }}" class="list-group-item list-group-item-action list-group-item-light p-3 {% if current_view == 'users' %}active{% endif %}">Usuários</a>
             <a href="{{ url_for('admin_dashboard', view='buildings') }}" class="list-group-item list-group-item-action list-group-item-light p-3 {% if current_view == 'buildings' %}active{% endif %}">Prédios</a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3 {% if current_view == 'financeiro' %}active{% endif %}" href="{{ url_for('admin_dashboard', view='financeiro') }}">Financeiro</a>
         </div>
     </div>
     <div id="page-content-wrapper">

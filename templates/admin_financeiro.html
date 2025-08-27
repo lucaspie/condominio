@@ -1,0 +1,135 @@
+{% extends "admin_dashboard.html" %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <h2 class="mt-4">Gestão Financeira</h2>
+    
+    <!-- Card para gerar condomínio mensal -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Gerar Condomínio Mensal</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('gerar_condominio_mensal') }}">
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <label for="mes_referencia" class="form-label">Mês de Referência</label>
+                        <input type="month" class="form-control" id="mes_referencia" name="mes_referencia" 
+                               value="{{ now.strftime('%Y-%m') }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="valor_condominio" class="form-label">Valor do Condomínio (R$)</label>
+                        <input type="number" class="form-control" id="valor_condominio" name="valor_condominio" 
+                               step="0.01" value="{{ VALOR_CONDOMINIO }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i> Gerar Condomínios
+                        </button>
+                    </div>
+                </div>
+                <small class="text-muted">Serão gerados condomínios para todos os moradores com apartamento atribuído.</small>
+            </form>
+        </div>
+    </div>
+
+    <!-- Estatísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5>Pagos</h5>
+                    <h3>{{ financeiro_data|selectattr('status', 'equalto', 'pago')|list|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5>Pendentes</h5>
+                    <h3>{{ financeiro_data|selectattr('status', 'equalto', 'pendente')|list|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5>Total</h5>
+                    <h3>{{ financeiro_data|length }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de condomínios -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Todos os Condomínios</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Mês/Ano</th>
+                            <th>Morador</th>
+                            <th>Apartamento</th>
+                            <th>Valor (R$)</th>
+                            <th>Status</th>
+                            <th>Vencimento</th>
+                            <th>Pagamento</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for registro in financeiro_data|sort(attribute='mes_referencia', reverse=true) %}
+                        <tr>
+                            <td>{{ registro.mes_referencia }}</td>
+                            <td>{{ registro.morador_nome }}</td>
+                            <td>{{ registro.apartamento_numero }}</td>
+                            <td>R$ {{ "%.2f"|format(registro.valor) }}</td>
+                            <td>
+                                <span class="badge {% if registro.status == 'pago' %}bg-success{% else %}bg-warning{% endif %}">
+                                    {{ registro.status|upper }}
+                                </span>
+                            </td>
+                            <td>{{ registro.data_vencimento }}</td>
+                            <td>
+                                {% if registro.data_pagamento %}
+                                    {{ registro.data_pagamento }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('gerar_extrato', financeiro_id=registro.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" title="Baixar Extrato">
+                                       <i class="bi bi-download"></i>
+                                    </a>
+                                    {% if registro.status == 'pendente' %}
+                                    <a href="{{ url_for('marcar_pago', financeiro_id=registro.id) }}" 
+                                       class="btn btn-sm btn-success" title="Marcar como Pago">
+                                       <i class="bi bi-check-circle"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="#" class="btn btn-sm btn-outline-danger" title="Excluir">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">
+                                Nenhum condomínio gerado ainda.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Financeiro{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Financeiro</h2>
+    
+    {% if user_tipo == 'administrador' %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Gerar Condomínio Mensal</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('gerar_condominio_mensal') }}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="mes_referencia" class="form-label">Mês de Referência</label>
+                        <input type="month" class="form-control" id="mes_referencia" name="mes_referencia" required>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">Gerar Condomínios</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Condomínio do Mês Atual -->
+    {% if condominio_atual %}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5>Condomínio do Mês Atual ({{ mes_atual }})</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Valor:</strong> R$ {{ condominio_atual.valor }}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="badge {% if condominio_atual.status == 'pago' %}bg-success{% else %}bg-warning{% endif %}">
+                            {{ condominio_atual.status|upper }}
+                        </span>
+                    </p>
+                    <p><strong>Vencimento:</strong> {{ condominio_atual.data_vencimento }}</p>
+                </div>
+                <div class="col-md-6">
+                    <a href="{{ url_for('gerar_extrato', financeiro_id=condominio_atual.id) }}" 
+                       class="btn btn-outline-primary mb-2">
+                       <i class="bi bi-download"></i> Baixar Extrato PDF
+                    </a>
+                    {% if user_tipo == 'administrador' and condominio_atual.status == 'pendente' %}
+                    <a href="{{ url_for('marcar_pago', financeiro_id=condominio_atual.id) }}" 
+                       class="btn btn-success mb-2">
+                       <i class="bi bi-check-circle"></i> Marcar como Pago
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Histórico de Condomínios -->
+    <div class="card">
+        <div class="card-header">
+            <h5>Histórico de Condomínios</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Mês/Ano</th>
+                            {% if user_tipo == 'administrador' %}
+                            <th>Morador</th>
+                            <th>Apartamento</th>
+                            {% endif %}
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>Vencimento</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for registro in registros|sort(attribute='mes_referencia', reverse=true) %}
+                        {% if registro.mes_referencia != mes_atual %}
+                        <tr>
+                            <td>{{ registro.mes_referencia }}</td>
+                            {% if user_tipo == 'administrador' %}
+                            <td>{{ registro.morador_nome }}</td>
+                            <td>{{ registro.apartamento_numero }}</td>
+                            {% endif %}
+                            <td>R$ {{ registro.valor }}</td>
+                            <td>
+                                <span class="badge {% if registro.status == 'pago' %}bg-success{% else %}bg-warning{% endif %}">
+                                    {{ registro.status|upper }}
+                                </span>
+                            </td>
+                            <td>{{ registro.data_vencimento }}</td>
+                            <td>
+                                <a href="{{ url_for('gerar_extrato', financeiro_id=registro.id) }}" 
+                                   class="btn btn-sm btn-outline-primary" title="Baixar Extrato">
+                                   <i class="bi bi-download"></i>
+                                </a>
+                                {% if user_tipo == 'administrador' and registro.status == 'pendente' %}
+                                <a href="{{ url_for('marcar_pago', financeiro_id=registro.id) }}" 
+                                   class="btn btn-sm btn-success" title="Marcar como Pago">
+                                   <i class="bi bi-check-circle"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% else %}
+                        <tr>
+                            <td colspan="{% if user_tipo == 'administrador' %}7{% else %}5{% endif %}" class="text-center">
+                                Nenhum registro encontrado
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
